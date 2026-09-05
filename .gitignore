@@ -1,0 +1,23 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Python缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 日志
+logs/
+*.log
+
+# 虚拟环境
+.venv/
+.env
+*.env
+
+# 模型权重，禁止提交
+docker/embedding/bge-large-zh-v1.5/*.bin
+*.safetensors
