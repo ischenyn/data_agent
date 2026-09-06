@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "asyncmy>=0.2.14",
+    "cryptography>=50.0.1",
     "elasticsearch[async]>=8,<9",
     "langchain-huggingface>=1.2.2",
     "loguru>=0.7.3",

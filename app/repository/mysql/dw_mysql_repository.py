@@ -1,7 +1,9 @@
 from typing import Any
+import asyncio
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.clients.mysql_client_manager import dw_mysql_client_manager
 
 
 class DWMySQLRepository:
@@ -57,3 +59,20 @@ class DWMySQLRepository:
     async def execute_sql(self, sql):
         result = await self.dw_session.execute(text(sql))
         return [dict(row) for row in result.mappings().fetchall()]
+
+
+if __name__ == '__main__':
+    async def test():
+        dw_mysql_client_manager.init()
+        async with dw_mysql_client_manager.session_factory() as session:
+            repo = DWMySQLRepository(session)
+            print(await repo.get_db_info())
+            print(await repo.get_column_types("fact_order"))
+            print(await repo.get_column_values("dim_product", "category", 10))
+            await repo.validate_sql("select 1")
+            print("validate ok")
+            print(await repo.execute_sql("select 1 as a, 'x' as b"))
+        await dw_mysql_client_manager.close()
+
+
+    asyncio.run(test())

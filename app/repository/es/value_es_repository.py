@@ -2,7 +2,7 @@ import asyncio
 
 from elasticsearch import AsyncElasticsearch
 
-from app.clients.es_client import es_client_manager
+from app.clients.es_client_manager import es_client_manager
 from app.models.es.value_info_es import ValueInfoES
 
 
@@ -74,10 +74,22 @@ if __name__ == '__main__':
     async def test():
         es_client_manager.init()
         es_client = es_client_manager.client
-        full_text_repository = ValueESRepository(es_client)
-        query = "统计一下手机产品的销量"
-        print(await full_text_repository.query(query=query))
-        await es_client_manager.close()
+        repo = ValueESRepository(es_client)
 
+        await repo.ensure_index()
+
+        await repo.batch_index([
+            {"id": "test.dim_product.category.手机数码", "value": "手机数码",
+             "type": "varchar", "column_id": "test.category",
+             "column_name": "category", "table_id": "test", "table_name": "dim_product"},
+        ])
+
+        import asyncio
+        await asyncio.sleep(1)  # 给 ES 一点索引刷新的时间
+
+        result = await repo.query("手机", score_threshold=0.1, limit=5)
+        print(result)
+
+        await es_client_manager.close()
 
     asyncio.run(test())

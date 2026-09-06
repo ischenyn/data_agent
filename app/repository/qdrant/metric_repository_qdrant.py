@@ -1,7 +1,7 @@
 from app.clients.embedding_client import embedding_client_manager
-from app.clients.qdrant_client import qdrant_client_manager
+from app.clients.qdrant_client_manager import qdrant_client_manager
 from app.models.qdrant.metric_info_qdrant import MetricInfoQdrant
-from app.repositories.qdrant.base_repository_qdrant import BaseQdrantRepository
+from app.repository.qdrant.base_repository_qdrant import BaseQdrantRepository
 
 
 class MetricQdrantRepository(BaseQdrantRepository[MetricInfoQdrant]):
@@ -11,17 +11,30 @@ class MetricQdrantRepository(BaseQdrantRepository[MetricInfoQdrant]):
 if __name__ == '__main__':
     import asyncio
 
-
     async def test():
         embedding_client_manager.init()
         embedding_client = embedding_client_manager.client
 
         qdrant_client_manager.init()
-        metric_qdrant_repository = MetricQdrantRepository(qdrant_client_manager.client)
+        repo = MetricQdrantRepository(qdrant_client_manager.client)
 
-        query = "统计一下销售总额"
-        result = await metric_qdrant_repository.search(embedding_client.embed_query(query))
-        print(result[0]['name'])
+        await repo.ensure_collection()
 
+        vec1 = await embedding_client.aembed_query("GMV")
+        vec2 = await embedding_client.aembed_query("客单价")
+        await repo.upsert(
+            ids=[1, 2],
+            embeddings=[vec1, vec2],
+            payloads=[
+                {"id": "GMV", "name": "GMV", "description": "成交总额"},
+                {"id": "AOV", "name": "AOV", "description": "客单价"},
+            ],
+        )
+
+        query_vec = embedding_client.embed_query("统计一下GMV")
+        result = await repo.search(query_vec, score_threshold=0.5, limit=5)
+        print(result)
+
+        await qdrant_client_manager.close()
 
     asyncio.run(test())
