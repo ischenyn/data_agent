@@ -1,27 +1,29 @@
-from pathlib import Path
+import pathlib
 
-from app.conf.config_loader import load_config
-from app.conf.meta_config import MetaConfig
+from app.clients.embedding_client import EmbeddingClientManager
+from app.repository.es.value_es_repository import ValueESRepository
+from app.repository.mysql.dw_mysql_repository import DWMySQLRepository
 from app.repository.mysql.meta_mysql_repository import MetaMySQLRepository
+from app.repository.qdrant.column_repository_qdrant import ColumnQdrantRepository
 
 
 class MetaKnowledgeService:
-    def __init__(self, meta_mysql_repository: MetaMySQLRepository):
+    def __init__(self,
+                 dw_mysql_repository: DWMySQLRepository,
+                 meta_mysql_repository: MetaMySQLRepository,
+                 embedding_client: EmbeddingClientManager,
+                 column_repository_qdrant: ColumnQdrantRepository,
+                 metric_repository_qdrant: MetaMySQLRepository,
+                 value_es_repository: ValueESRepository
+                 ):
+        self.dw_mysql_repository = dw_mysql_repository
         self.meta_mysql_repository = meta_mysql_repository
+        self.embedding_client = embedding_client
+        self.column_repository_qdrant = column_repository_qdrant
+        self.metric_repository_qdrant = metric_repository_qdrant
+        self.value_es_repository = value_es_repository
 
+    def build_meta_knowledge(self, path: pathlib):
+        # 1. 拿到配置文件的路径,把 yaml 内容读成一个 Python 能用的对象。
 
-    async def build(self, config_path: Path):
-        # 1.加载配置文件
-        meta_config: MetaConfig = load_config(config_path, MetaConfig)
-        # 2.处理表信息
-        if meta_config.tables:
-            pass
-
-
-
-
-        # 3.处理指标信息
-        if meta_config.metrics:
-            pass
-
-
+        pass

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from app.conf.config_loader import load_config
+from app.config.config_loader import load_config
 
 
 # 日志配置
@@ -75,7 +75,7 @@ class AppConfig:
 
 
 config_file = Path(__file__).parents[2] / 'conf' / 'app_config.yaml'
-app_config: AppConfig = load_config(config_file, AppConfig)
+app_config: AppConfig = load_config(config_file=config_file, schema_cls=AppConfig)
 
 if __name__ == '__main__':
     print(app_config.db_meta.port)

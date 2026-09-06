@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 
-from app.conf.app_config import app_config
+from app.config.app_config import app_config
 
 PayloadT = TypeVar("PayloadT")
 

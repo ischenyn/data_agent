@@ -9,6 +9,16 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Python 构建/测试产物
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # 日志
 logs/
 *.log
@@ -18,6 +28,11 @@ logs/
 .env
 *.env
 
-# 模型权重，禁止提交
-docker/embedding/bge-large-zh-v1.5/*.bin
+# 操作系统生成文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 模型权重/下载目录（通过 huggingface-cli 重新下载），禁止提交
+docker/embedding/bge-large-zh-v1.5/
 *.safetensors

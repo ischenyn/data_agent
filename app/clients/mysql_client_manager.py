@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker
 
-from app.conf.app_config import DBConfig, app_config
+from app.config.app_config import DBConfig, app_config
 
 
 class MysqlClientManager:

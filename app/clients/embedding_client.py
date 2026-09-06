@@ -1,6 +1,6 @@
 from huggingface_hub import InferenceClient, AsyncInferenceClient
 
-from app.conf.app_config import EmbeddingConfig, app_config
+from app.config.app_config import EmbeddingConfig, app_config
 
 
 class LocalEmbeddingClient:

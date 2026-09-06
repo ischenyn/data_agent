@@ -4,7 +4,7 @@ from typing import Optional
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
 
-from app.conf.app_config import QdrantConfig, app_config
+from app.config.app_config import QdrantConfig, app_config
 
 
 class QdrantClientManager:
