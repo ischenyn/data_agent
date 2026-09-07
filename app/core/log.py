@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import uuid
 from pathlib import Path
 
 from loguru import logger
@@ -17,12 +18,16 @@ log_format = (
 
 
 def inject_request_id(record):
-    request_id = request_id_ctx_var.get()
+    try:
+        request_id = request_id_ctx_var.get()
+    except Exception as e:
+        request_id = uuid.uuid4()
     record["extra"]["request_id"] = request_id
 
 
 logger.remove()
 logger = logger.patch(inject_request_id)
+
 if app_config.logging.console.enable:
     logger.add(sink=sys.stdout, level=app_config.logging.console.level, format=log_format)
 if app_config.logging.file.enable:

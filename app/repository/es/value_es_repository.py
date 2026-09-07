@@ -1,8 +1,5 @@
-import asyncio
-
 from elasticsearch import AsyncElasticsearch
 
-from app.clients.es_client_manager import es_client_manager
 from app.models.es.value_info_es import ValueInfoES
 
 
@@ -27,6 +24,13 @@ class ValueESRepository:
         if not await self.es_client.indices.exists(index=self.es_index_name):
             await self.es_client.indices.create(index=self.es_index_name,
                                                 mappings=self.es_index_mappings)
+
+    async def reset(self):
+        """删除并重建索引(全量重建用)"""
+        if await self.es_client.indices.exists(index=self.es_index_name):
+            await self.es_client.indices.delete(index=self.es_index_name)
+        await self.es_client.indices.create(index=self.es_index_name,
+                                            mappings=self.es_index_mappings)
 
     async def batch_index(self, docs: list[ValueInfoES], batch_size: int = 10):
 
@@ -68,28 +72,3 @@ class ValueESRepository:
             results.append(source)
 
         return results
-
-
-if __name__ == '__main__':
-    async def test():
-        es_client_manager.init()
-        es_client = es_client_manager.client
-        repo = ValueESRepository(es_client)
-
-        await repo.ensure_index()
-
-        await repo.batch_index([
-            {"id": "test.dim_product.category.手机数码", "value": "手机数码",
-             "type": "varchar", "column_id": "test.category",
-             "column_name": "category", "table_id": "test", "table_name": "dim_product"},
-        ])
-
-        import asyncio
-        await asyncio.sleep(1)  # 给 ES 一点索引刷新的时间
-
-        result = await repo.query("手机", score_threshold=0.1, limit=5)
-        print(result)
-
-        await es_client_manager.close()
-
-    asyncio.run(test())

@@ -11,6 +11,14 @@ class MetaMySQLRepository:
     def __init__(self, meta_session: AsyncSession):
         self.session = meta_session
 
+    async def delete_all(self):
+        """清空四张元数据表(全量重建用),顺序先子表后主表,自成一个事务。
+        用 DELETE 而非 TRUNCATE:TRUNCATE 是 DDL 会隐式提交,不适合放在事务里。
+        """
+        async with self.session.begin():
+            for table_name in ('column_metric', 'column_info', 'metric_info', 'table_info'):
+                await self.session.execute(text(f"DELETE FROM {table_name}"))
+
     async def save_table_infos(self, table_infos: list[TableInfoMySQL]):
         self.session.add_all(table_infos)
 
@@ -30,50 +38,9 @@ class MetaMySQLRepository:
         return await self.session.get(TableInfoMySQL, table_id)
 
     async def get_key_columns_by_table_id(self, table_id) -> list[ColumnInfoMySQL]:
-        sql = text("""
-                   select *
-                   from column_info
-                   where table_id = :table_id
-                     and role in ('primary_key', 'foreign_key')
-                   """)
-        query = select(ColumnInfoMySQL).from_statement(sql)
-
-        result = await self.session.execute(query, {"table_id": table_id})
-        return result.scalars().all()
-
-if __name__ == '__main__':
-    import asyncio
-    from app.clients.mysql_client_manager import meta_mysql_client_manager
-
-    async def test():
-        meta_mysql_client_manager.init()
-        async with meta_mysql_client_manager.session_factory() as session:
-            repo = MetaMySQLRepository(session)
-
-            # 写一条测试数据
-            async with session.begin():
-                await repo.save_table_infos([
-                    TableInfoMySQL(id="t_test", name="t_test",
-                                   role="fact", description="测试表")
-                ])
-                await repo.save_column_infos([
-                    ColumnInfoMySQL(id="t_test.c1", name="c1", type="int",
-                                    role="primary_key", examples=[1, 2],
-                                    description="主键", alias=["编号"],
-                                    table_id="t_test"),
-                    ColumnInfoMySQL(id="t_test.c2", name="c2", type="varchar",
-                                    role="dimension", examples=["a"],
-                                    description="维度", alias=["名称"],
-                                    table_id="t_test"),
-                ])
-
-            # 读回来
-            print(await repo.get_table_by_id("t_test"))
-            col = await repo.get_column_by_id("t_test.c1")
-            print(col.name, col.alias, col.examples)   # alias/examples 应该是 Python 列表
-            keys = await repo.get_key_columns_by_table_id("t_test")
-            print([k.id for k in keys])                # 只应该有 c1,没有 c2
-
-        await meta_mysql_client_manager.close()
-
-    asyncio.run(test())
+        query = select(ColumnInfoMySQL).where(
+            ColumnInfoMySQL.table_id == table_id,
+            ColumnInfoMySQL.role.in_(('primary_key', 'foreign_key')),
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())

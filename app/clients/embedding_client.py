@@ -39,9 +39,3 @@ class EmbeddingClientManager:
 
 
 embedding_client_manager = EmbeddingClientManager(app_config.embedding)
-
-if __name__ == '__main__':
-    client = EmbeddingClientManager(app_config.embedding)
-    client.init()
-    query = client.client.embed_query("hello world")
-    print(len(query), query)

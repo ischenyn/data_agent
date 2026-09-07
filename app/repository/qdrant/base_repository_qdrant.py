@@ -25,6 +25,18 @@ class BaseQdrantRepository(Generic[PayloadT]):
                 ),
             )
 
+    async def reset(self):
+        """删除并重建 collection(全量重建用)"""
+        if await self.client.collection_exists(self.collection_name):
+            await self.client.delete_collection(self.collection_name)
+        await self.client.create_collection(
+            collection_name=self.collection_name,
+            vectors_config=VectorParams(
+                size=app_config.qdrant.embedding_size,
+                distance=Distance.COSINE,
+            ),
+        )
+
     async def upsert(
             self,
             ids: list,
@@ -58,6 +70,3 @@ class BaseQdrantRepository(Generic[PayloadT]):
             limit=limit,
         )
         return [point.payload for point in result.points]
-
-
-
