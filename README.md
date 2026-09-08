@@ -134,21 +134,6 @@ uvicorn main:app --reload --port 8000
 - 交互式文档: http://localhost:8000/docs
 - 问答接口(SSE 流式): `POST http://localhost:8000/api/query`,请求体 `{"query": "统计一下华东地区的销售额"}`
 
-### 启动前端(可选)
-
-前端为独立的 Vue3 + Vite 项目(仓库外 `date-agent-frontend/`),代理已指向本后端:
-
-```bash
-cd ../date-agent-frontend
-npm install
-npm run dev      # 打开 http://localhost:5173
-```
-
-📊 项目进度
-
-- [x] 离线知识库构建(语义层 → MySQL / Qdrant / Elasticsearch)
-- [x] 在线 Agent(LangGraph 全流程节点)
-- [x] 对外服务(FastAPI + SSE)
 
 ⚠️ 已知限制
 
