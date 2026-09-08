@@ -49,8 +49,13 @@ class ValueESRepository:
 
             await self.es_client.bulk(operations=operations)
 
-    async def query(self, query: str, score_threshold: float = 0.6, limit: int = 10) -> list[ValueInfoES]:
+    async def query(self, query: str, limit: int = 10) -> list[ValueInfoES]:
+        """按相关度召回字段取值。
 
+        ES 的 _score 是 BM25 分数,绝对值跨数据集不可比、无固定阈值,
+        因此不做 min_score 过滤,依靠 ES 默认按 _score 降序排序 + limit 截断。
+        返回结果已按相关度从高到低排列。
+        """
         es_query = {
             "match": {
                 "value": query
@@ -60,7 +65,6 @@ class ValueESRepository:
         resp = await self.es_client.search(
             index=self.es_index_name,
             query=es_query,
-            min_score=score_threshold,
             size=limit
         )
 

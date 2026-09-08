@@ -34,8 +34,24 @@ class MetaMySQLRepository:
     async def get_column_by_id(self, column_id: str) -> ColumnInfoMySQL | None:
         return await self.session.get(ColumnInfoMySQL, column_id)
 
+    async def get_columns_by_ids(self, column_ids: list[str]) -> list[ColumnInfoMySQL]:
+        """批量查询字段(在线召回合并阶段用,替代 N+1 单查)"""
+        if not column_ids:
+            return []
+        query = select(ColumnInfoMySQL).where(ColumnInfoMySQL.id.in_(column_ids))
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
     async def get_table_by_id(self, table_id) -> TableInfoMySQL | None:
         return await self.session.get(TableInfoMySQL, table_id)
+
+    async def get_tables_by_ids(self, table_ids: list[str]) -> list[TableInfoMySQL]:
+        """批量查询表(在线召回合并阶段用,替代 N+1 单查)"""
+        if not table_ids:
+            return []
+        query = select(TableInfoMySQL).where(TableInfoMySQL.id.in_(table_ids))
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
 
     async def get_key_columns_by_table_id(self, table_id) -> list[ColumnInfoMySQL]:
         query = select(ColumnInfoMySQL).where(
@@ -44,3 +60,18 @@ class MetaMySQLRepository:
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
+
+    async def get_key_columns_by_table_ids(self, table_ids: list[str]) -> dict[str, list[ColumnInfoMySQL]]:
+        """批量查询多张表的主键/外键,返回 {table_id: [columns]}"""
+        if not table_ids:
+            return {}
+        query = select(ColumnInfoMySQL).where(
+            ColumnInfoMySQL.table_id.in_(table_ids),
+            ColumnInfoMySQL.role.in_(('primary_key', 'foreign_key')),
+        )
+        result = await self.session.execute(query)
+        key_columns = list(result.scalars().all())
+        table_map: dict[str, list[ColumnInfoMySQL]] = {}
+        for column in key_columns:
+            table_map.setdefault(column.table_id, []).append(column)
+        return table_map

@@ -20,7 +20,7 @@ from app.repository.qdrant.column_repository_qdrant import ColumnQdrantRepositor
 from app.repository.qdrant.metric_repository_qdrant import MetricQdrantRepository
 
 
-def _convert_column_info_from_mysql_to_qdrant(column_info: ColumnInfoMySQL):
+def convert_column_info_from_mysql_to_qdrant(column_info: ColumnInfoMySQL):
     return ColumnInfoQdrant(
         id=column_info.id,
         name=column_info.name,
@@ -33,7 +33,7 @@ def _convert_column_info_from_mysql_to_qdrant(column_info: ColumnInfoMySQL):
     )
 
 
-def _convert_metric_info_from_mysql_to_qdrant(metric_info):
+def convert_metric_info_from_mysql_to_qdrant(metric_info):
     return MetricInfoQdrant(
         id=metric_info.id,
         name=metric_info.name,
@@ -155,7 +155,7 @@ class MetaKnowledgeService:
         await self.column_repository_qdrant.ensure_collection()
         records = []
         for column_info in column_infos:
-            payload = _convert_column_info_from_mysql_to_qdrant(column_info)
+            payload = convert_column_info_from_mysql_to_qdrant(column_info)
             # id 采用确定性格式(实体id + 向量来源),保证重建时可覆盖、可追溯
             records.append(
                 {
@@ -303,7 +303,7 @@ class MetaKnowledgeService:
         await self.metric_repository_qdrant.ensure_collection()
         records = []
         for metric_info in metric_infos:
-            payload = _convert_metric_info_from_mysql_to_qdrant(metric_info)
+            payload = convert_metric_info_from_mysql_to_qdrant(metric_info)
             records.append(
                 {
                     'id': f"{metric_info.id}::name",

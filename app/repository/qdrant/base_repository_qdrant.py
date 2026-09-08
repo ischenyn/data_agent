@@ -62,11 +62,19 @@ class BaseQdrantRepository(Generic[PayloadT]):
             vector: list[float],
             score_threshold: float = 0.6,
             limit: int = 10,
-    ) -> list[PayloadT]:
+            with_score: bool = False,
+    ) -> list:
+        """向量检索。
+
+        with_score=False(默认): 返回 payload 列表,兼容旧调用方。
+        with_score=True: 返回 [(payload, score), ...],score 降序,供在线召回排序用。
+        """
         result = await self.client.query_points(
             collection_name=self.collection_name,
             query=vector,
             score_threshold=score_threshold,
             limit=limit,
         )
+        if with_score:
+            return [(point.payload, point.score) for point in result.points]
         return [point.payload for point in result.points]

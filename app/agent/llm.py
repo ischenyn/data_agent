@@ -11,14 +11,3 @@ llm = init_chat_model(
     api_key=api_key,
     temperature=0,
 )
-
-if __name__ == '__main__':
-    import asyncio
-
-
-    async def test():
-        result = await llm.ainvoke("中国的首都是哪里？")
-        print(result)
-
-
-    asyncio.run(test())

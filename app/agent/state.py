@@ -41,7 +41,11 @@ class DBInfoState(TypedDict):
 class DataAgentState(TypedDict):
     query: str  # 用户的原始问题
 
-    keywords: list[str]  # 关键词列表，由query分词和LLM生成得到，用于召回信息
+    # 关键词列表，由 extract_keywords 一次生成，分别驱动三路召回
+    column_keywords: list[str]  # 字段概念关键词（用于 Qdrant 字段召回）
+    metric_keywords: list[str]  # 指标概念关键词（用于 Qdrant 指标召回）
+    value_keywords: list[str]  # 取值候选关键词（用于 ES 取值召回）
+
     retrieved_metrics: list[MetricInfoQdrant]  # 召回的指标信息（原始）
     retrieved_columns: list[ColumnInfoQdrant]  # 召回的字段信息（原始）
     retrieved_values: list[ValueInfoES]  # 召回的字段值信息（原始）
@@ -54,3 +58,4 @@ class DataAgentState(TypedDict):
 
     sql: str  # 生成的SQL语句
     error: str  # 校验SQL语句的错误信息（没有错误则为 None）
+    attempts: int  # SQL 纠错尝试次数（达到上限仍未通过校验则放弃）
