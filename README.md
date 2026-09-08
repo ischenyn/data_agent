@@ -11,8 +11,8 @@
   字段类型、样例数据)自动合并
 - 🔍 **多路召回**:字段与指标走向量语义检索(Qdrant),具体取值走全文关键词检索(Elasticsearch),兼顾语义相似匹配与精确值匹配
 - 🧩 **多向量索引设计**:同一实体的名称、描述、每个别名分别生成独立向量,避免拼接文本导致语义稀释、影响召回
-- 🤖 **LangGraph 编排**(开发中):关键词提取 → 并行召回 → 合并精排 → 上下文补全 → SQL 生成 → 校验/自纠错 → 执行,支持流式过程输出
-- 🌊 **对外服务**(规划中):FastAPI + SSE 流式问答接口
+- 🤖 **LangGraph 编排**:关键词提取 → 三路召回(字段/指标/取值)→ 合并 → LLM 筛选 → 上下文补全 → SQL 生成 → 校验/自纠错(上限3次)→ 执行,支持流式过程输出
+- 🌊 **对外服务**:FastAPI + SSE 流式问答接口,配套 Vue3 前端
 
 ## 🏗️ 技术栈
 
@@ -33,13 +33,15 @@
 
 ### 分层结构(依赖严格自上而下,下层不感知上层)
 
-scripts/ 离线任务入口(建库脚本)
-service/ 业务编排(知识库构建 / 对话服务)
-agent/ LangGraph 节点与图定义 ← 开发中
+api/ 对外接口层(FastAPI 路由 / 依赖注入 / 请求响应模型)
+service/ 业务编排(离线知识库构建 / 在线问答服务)
+agent/ LangGraph 节点与图(在线问答流程)
 repository/ 数据存取(按存储介质划分)
 clients/ 外部服务连接管理
 models/ 数据结构定义
 config/ 配置加载(yaml → 类型安全对象)
+prompts/ LLM 提示词模板
+scripts/ 离线任务入口(建库脚本)
 
 ### 离线知识库构建流程
 
@@ -52,6 +54,14 @@ meta_config.yaml(语义配置)
 │
 └─→ 指标信息 → MySQL → 多向量展开 → Qdrant
 
+### 在线问答流程(LangGraph)
+
+用户问题 → 关键词抽取(一次 LLM 产出 字段/指标/取值 三类词)
+  → 三路并行召回(Qdrant 字段向量 / Qdrant 指标向量 / ES 取值全文)
+  → 合并去重排序(按相关度截断,缺失信息回查 MySQL 补全)
+  → LLM 筛选表/字段/指标 → 补全时间/库上下文
+  → LLM 生成 SQL → EXPLAIN 校验(失败自动纠错,最多 3 次)→ 执行并流式返回
+
 ## 📁 目录结构
 
 conf/ 配置文件(连接信息 + 语义层配置)
@@ -62,11 +72,11 @@ models/ 数据结构定义
 repository/ 数据存取
 service/ 业务编排
 scripts/ 一次性任务(离线建库等)
-core/ 日志、上下文等基础设施
-agent/ LangGraph 节点与图        [开发中]
-api/ FastAPI 路由与依赖注入      [规划中]
-prompts/ LLM 提示词模板             [开发中]
-main.py 服务入口                  [规划中]
+core/ 日志、上下文、中间件等基础设施
+agent/ LangGraph 节点与图
+api/ FastAPI 路由与依赖注入(api/schemas/ 为请求/响应模型)
+prompts/ LLM 提示词模板
+main.py 服务入口
 
 ## 🚀 快速开始
 
@@ -115,11 +125,30 @@ python -m app.scripts.build_meta_knowledge -c conf/meta_config.yaml
 > ✅ 该脚本为全量重建:每次执行会先清空 MySQL 元数据表、重建 Qdrant collection 与 ES 索引,
 > 再按当前 `meta_config.yaml` 重新生成全部数据,因此可安全重复执行。
 
+### 启动在线问答 API
+
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+- 交互式文档: http://localhost:8000/docs
+- 问答接口(SSE 流式): `POST http://localhost:8000/api/query`,请求体 `{"query": "统计一下华东地区的销售额"}`
+
+### 启动前端(可选)
+
+前端为独立的 Vue3 + Vite 项目(仓库外 `date-agent-frontend/`),代理已指向本后端:
+
+```bash
+cd ../date-agent-frontend
+npm install
+npm run dev      # 打开 http://localhost:5173
+```
+
 📊 项目进度
 
 - [x] 离线知识库构建(语义层 → MySQL / Qdrant / Elasticsearch)
-- [ ] 在线 Agent(LangGraph 全流程节点)
-- [ ] 对外服务(FastAPI + SSE)
+- [x] 在线 Agent(LangGraph 全流程节点)
+- [x] 对外服务(FastAPI + SSE)
 
 ⚠️ 已知限制
 
